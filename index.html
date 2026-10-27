@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CampusConnect — Student Interaction Portal</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script>
+tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['Inter','system-ui','sans-serif'],mono:['"JetBrains Mono"','monospace']},
+colors:{brand:{50:'#eef2ff',100:'#e0e7ff',200:'#c7d2fe',300:'#a5b4fc',400:'#818cf8',500:'#6366f1',600:'#4f46e5',700:'#4338ca',800:'#3730a3',900:'#312e81'},
+ink:{700:'#2b2d42',800:'#1e1f2b',850:'#171824',900:'#10111a',950:'#0a0b12'}},
+boxShadow:{glow:'0 8px 30px rgba(99,102,241,.35)',card:'0 4px 24px rgba(2,6,23,.12)'},
+animation:{'fade-up':'fadeUp .4s ease both','pop':'pop .25s ease both'},keyframes:{fadeUp:{from:{opacity:0,transform:'translateY(10px)'},to:{opacity:1,transform:'none'}},pop:{from:{opacity:0,transform:'scale(.96)'},to:{opacity:1,transform:'scale(1)'}}}}}}
+</script>
+<style>
+  *{scrollbar-width:thin;scrollbar-color:#6366f1aa transparent}
+  ::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:#6366f188;border-radius:99px}::-webkit-scrollbar-track{background:transparent}
+  html{scroll-behavior:smooth} body{font-family:Inter,system-ui,sans-serif}
+  .glass{background:rgba(255,255,255,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+  .dark .glass{background:rgba(23,24,36,.78)}
+  .grad-text{background:linear-gradient(92deg,#818cf8,#e879f9 55%,#38bdf8);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .grad-btn{background:linear-gradient(92deg,#4f46e5,#7c3aed 55%,#db2777);color:#fff;transition:.2s}
+  .grad-btn:hover{filter:brightness(1.12);transform:translateY(-1px)} .grad-btn:disabled{opacity:.55;transform:none}
+  .nav-btn{display:flex;align-items:center;gap:.7rem;width:100%;padding:.62rem .8rem;border-radius:.75rem;font-weight:600;font-size:.9rem;color:#64748b;transition:.18s;text-align:left}
+  .dark .nav-btn{color:#94a3b8}.nav-btn:hover{background:#eef2ff;color:#4f46e5}.dark .nav-btn:hover{background:#ffffff12;color:#fff}
+  .nav-btn.active{background:linear-gradient(92deg,#4f46e5,#7c3aed);color:#fff;box-shadow:0 8px 20px rgba(99,102,241,.35)}
+  .field{width:100%;border-radius:.75rem;border:1.5px solid #e2e8f0;background:#fff;padding:.65rem .85rem;font-size:.92rem;outline:none;transition:.15s;color:#0f172a}
+  .dark .field{border-color:#ffffff1f;background:#ffffff0d;color:#f1f5f9}
+  .field:focus{border-color:#6366f1;box-shadow:0 0 0 4px rgba(99,102,241,.15)} .field::placeholder{color:#94a3b8}
+  select.field option{color:#0f172a}
+  .card{background:#fff;border:1px solid #e7eaf3;border-radius:1.1rem;box-shadow:0 2px 12px rgba(2,6,23,.05)}
+  .dark .card{background:#171824;border-color:#ffffff14;box-shadow:0 2px 14px rgba(0,0,0,.35)}
+  .chip{display:inline-flex;align-items:center;gap:.3rem;font-size:.72rem;font-weight:700;padding:.22rem .6rem;border-radius:99px}
+  .msg-row{transition:background .15s;border-radius:.6rem}.msg-row:hover{background:#f8fafc}.dark .msg-row:hover{background:#ffffff08}
+  .msg-actions{opacity:0;transition:.15s}.msg-row:hover .msg-actions{opacity:1}
+  .md-body h1,.md-body h2,.md-body h3{font-weight:800;margin:.7em 0 .35em;line-height:1.25}
+  .md-body h1{font-size:1.35rem}.md-body h2{font-size:1.15rem}.md-body h3{font-size:1rem}
+  .md-body p{margin:.45em 0;line-height:1.65}.md-body ul,.md-body ol{margin:.4em 0 .4em 1.3em;line-height:1.7}
+  .md-body ul{list-style:disc}.md-body ol{list-style:decimal}
+  .md-body code{font-family:"JetBrains Mono",monospace;font-size:.82em;background:#eef2ff;color:#4338ca;padding:.1em .35em;border-radius:.35rem}
+  .dark .md-body code{background:#ffffff14;color:#c7d2fe}
+  .md-body pre{background:#0f172a;color:#e2e8f0;border-radius:.8rem;padding:1rem;overflow:auto;margin:.6em 0;font-size:.85rem}
+  .md-body a{color:#6366f1;text-decoration:underline}.md-body blockquote{border-left:3px solid #6366f1;padding-left:.8rem;color:#64748b;margin:.6em 0}
+  .cal-day{min-height:96px;border:1px solid #eef1f7;padding:.45rem;border-radius:.8rem;cursor:pointer;transition:.15s;background:#fff}
+  .dark .cal-day{border-color:#ffffff10;background:#ffffff06}.cal-day:hover{border-color:#a5b4fc;transform:translateY(-1px)}
+  .cal-day.today{border-color:#6366f1;box-shadow:0 0 0 2px rgba(99,102,241,.25)}
+  .cal-day.dim{opacity:.38;cursor:default}
+  .tab-btn{padding:.5rem 1rem;border-radius:.7rem;font-weight:700;font-size:.85rem;color:#64748b;transition:.15s;white-space:nowrap}
+  .tab-btn:hover{color:#4f46e5;background:#eef2ff}.dark .tab-btn:hover{background:#ffffff10;color:#fff}
+  .tab-btn.active{background:#4f46e5;color:#fff;box-shadow:0 6px 16px rgba(79,70,229,.35)}
+  .toast{animation:fadeUp .3s ease both}
+  .skeleton{animation:pulse 1.4s ease-in-out infinite;background:linear-gradient(90deg,#e2e8f0,#f1f5f9,#e2e8f0);background-size:200% 100%}
+  .dark .skeleton{background:linear-gradient(90deg,#1e293b,#334155,#1e293b);background-size:200% 100%}
+  .view{display:none}.view.active{display:block;animation:fadeUp .35s ease both}
+  .modal-backdrop{background:rgba(2,6,23,.62);backdrop-filter:blur(5px)}
+  .blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.5;pointer-events:none}
+  .avatar{display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;border-radius:50%;flex:none;text-transform:uppercase}
+  input[type=checkbox].todo-check{width:1.15rem;height:1.15rem;accent-color:#4f46e5;cursor:pointer}
+  .online-dot{width:.65rem;height:.65rem;border-radius:99px;background:#22c55e;border:2px solid #171824}
+  .dm-conv{transition:background .15s;border-radius:.9rem;cursor:pointer}
+  .dm-conv:hover{background:#eef2ff}.dark .dm-conv:hover{background:#ffffff0d}
+  .dm-conv.active{background:linear-gradient(92deg,#e0e7ff,#f5d0fe55)}.dark .dm-conv.active{background:linear-gradient(92deg,#4f46e533,#9333ea26)}
+  .dm-row .dm-del{opacity:0;transition:.15s}.dm-row:hover .dm-del{opacity:1}
+  @media (max-width:767px){#dmLayout.dm-open #dmListPane{display:none}#dmLayout:not(.dm-open) #dmChatPane{display:none}}
+  @media (max-width:1023px){#sidebar{transform:translateX(-105%);transition:transform .3s ease}#sidebar.open{transform:none}}
+</style>
+</head>
+<body class="bg-slate-100 dark:bg-ink-950 text-slate-800 dark:text-slate-100 min-h-screen antialiased">
+
+<!-- ══════════════ AUTH SCREEN ══════════════ -->
+<section id="authScreen" class="relative min-h-screen flex items-center justify-center p-4 overflow-hidden">
+  <div class="blob w-96 h-96 bg-indigo-500 -top-24 -left-24"></div>
+  <div class="blob w-96 h-96 bg-fuchsia-500 -bottom-32 -right-20"></div>
+  <div class="blob w-64 h-64 bg-sky-400 top-1/3 left-2/3"></div>
+  <div class="relative w-full max-w-5xl grid lg:grid-cols-2 card overflow-hidden !rounded-3xl shadow-2xl">
+    <!-- Branding -->
+    <div class="hidden lg:flex flex-col justify-between p-10 text-white relative overflow-hidden" style="background:linear-gradient(150deg,#312e81,#6d28d9 55%,#be185d)">
+      <div>
+        <div class="flex items-center gap-3"><div class="w-11 h-11 rounded-2xl bg-white/20 flex items-center justify-center text-xl"><i class="fa-solid fa-graduation-cap"></i></div>
+        <div><p class="font-black text-lg leading-none">CampusConnect</p><p class="text-white/70 text-xs mt-1">Student Interaction Portal</p></div></div>
+        <h1 class="text-4xl font-black leading-tight mt-10">Your campus,<br/>connected.</h1>
+        <p class="text-white/80 mt-4 leading-relaxed text-[15px]">Real-time chat channels, hackathon teammate finder, a peer resource library, admin-approved roadmaps and your personal planner — one portal for your whole college.</p>
+        <ul class="mt-8 space-y-3 text-sm font-medium">
+          <li><i class="fa-solid fa-comments w-6 text-sky-300"></i> Live chat rooms, moderated &amp; safe</li>
+          <li><i class="fa-solid fa-users w-6 text-emerald-300"></i> Find hackathon teammates in minutes</li>
+          <li><i class="fa-solid fa-map w-6 text-amber-300"></i> Verified, admin-approved roadmaps</li>
+          <li><i class="fa-solid fa-folder-open w-6 text-fuchsia-300"></i> Notes, cheat sheets &amp; previous papers</li>
+        </ul>
+      </div>
+      <p class="text-white/60 text-xs mt-10">Restricted to verified college emails · Powered by Supabase</p>
+    </div>
+    <!-- Forms -->
+    <div class="p-6 sm:p-10 relative">
+      <button id="themeToggleAuth" class="absolute top-5 right-5 w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/10 hover:scale-105 transition" title="Toggle theme"><i class="fa-solid fa-circle-half-stroke"></i></button>
+      <div class="lg:hidden flex items-center gap-3 mb-6"><div class="w-10 h-10 rounded-xl grad-btn flex items-center justify-center"><i class="fa-solid fa-graduation-cap"></i></div><p class="font-black text-lg">CampusConnect</p></div>
+      <div id="modeBanner" class="mb-5 text-[13px] rounded-xl px-4 py-3 font-medium leading-relaxed"></div>
+      <div class="flex bg-slate-100 dark:bg-white/[.07] rounded-xl p-1 mb-6 w-fit">
+        <button id="tabLogin" class="tab-btn active">Log in</button>
+        <button id="tabSignup" class="tab-btn">Sign up</button>
+      </div>
+
+      <form id="loginForm" class="space-y-4" novalidate>
+        <div><label class="text-sm font-bold">College email</label><input id="loginEmail" type="email" class="field mt-1.5" placeholder="you@ipec.org.in" autocomplete="email" required/></div>
+        <div><label class="text-sm font-bold">Password</label>
+          <div class="relative"><input id="loginPassword" type="password" class="field mt-1.5 pr-11" placeholder="••••••••" autocomplete="current-password" required/>
+          <button type="button" data-eye="loginPassword" class="absolute right-3 top-[62%] -translate-y-1/2 text-slate-400"><i class="fa-regular fa-eye"></i></button></div></div>
+        <p id="loginError" class="hidden text-sm font-semibold text-rose-500 bg-rose-50 dark:bg-rose-500/10 rounded-lg px-3 py-2"></p>
+        <button class="grad-btn w-full py-3 rounded-xl font-bold shadow-glow" id="loginBtn">Log in to your campus →</button>
+        <button type="button" id="forgotBtn" class="text-sm font-semibold text-brand-600 dark:text-brand-300 hover:underline">Forgot password?</button>
+      </form>
+
+      <form id="signupForm" class="space-y-4 hidden" novalidate>
+        <div><label class="text-sm font-bold">Full name</label><input id="suName" class="field mt-1.5" placeholder="Aarav Sharma" required/></div>
+        <div><label class="text-sm font-bold">College email <span class="text-slate-400 font-medium">(must end with <span class="allowed-domains font-mono"></span>)</span></label><input id="suEmail" type="email" class="field mt-1.5" placeholder="you@ipec.org.in" autocomplete="email" required/></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="text-sm font-bold">Academic year</label><select id="suYear" class="field mt-1.5"><option>1st Year</option><option>2nd Year</option><option>3rd Year</option><option>4th Year</option><option>PG / Alumni</option></select></div>
+          <div><label class="text-sm font-bold">Branch / Major</label><select id="suBranch" class="field mt-1.5"><option>CSE</option><option>IT</option><option>ECE</option><option>EEE</option><option>ME</option><option>CE</option><option>AI/DS</option><option>Other</option></select></div>
+        </div>
+        <div><label class="text-sm font-bold">Course</label><select id="suCourse" class="field mt-1.5"><option>B.Tech</option><option>M.Tech</option><option>BCA</option><option>MCA</option><option>B.Sc</option><option>MBA</option><option>Other</option></select></div>
+        <div><label class="text-sm font-bold">Password <span class="text-slate-400 font-medium">(min. 6 characters)</span></label>
+          <div class="relative"><input id="suPassword" type="password" class="field mt-1.5 pr-11" placeholder="Create a strong password" autocomplete="new-password" required/>
+          <button type="button" data-eye="suPassword" class="absolute right-3 top-[62%] -translate-y-1/2 text-slate-400"><i class="fa-regular fa-eye"></i></button></div></div>
+        <p id="signupError" class="hidden text-sm font-semibold text-rose-500 bg-rose-50 dark:bg-rose-500/10 rounded-lg px-3 py-2"></p>
+        <p id="signupOk" class="hidden text-sm font-semibold text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg px-3 py-2"></p>
+        <button class="grad-btn w-full py-3 rounded-xl font-bold shadow-glow" id="signupBtn">Create account &amp; join my college →</button>
+        <p class="text-xs text-slate-400 leading-relaxed">Your email domain decides your college workspace — you automatically join your institution's server.</p>
+      </form>
+
+      <div id="demoAccounts" class="mt-7"></div>
+      <button id="supabaseConfigBtn" class="mt-4 text-[13px] font-semibold text-slate-500 dark:text-slate-400 hover:text-brand-500 underline underline-offset-4"><i class="fa-solid fa-database mr-1"></i>Connect your own Supabase project</button>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ APP SHELL ══════════════ -->
+<section id="appShell" class="hidden">
+  <div class="flex min-h-screen">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="fixed lg:sticky top-0 z-40 h-screen w-[272px] flex-none glass border-r border-slate-200 dark:border-white/10 flex flex-col">
+      <div class="p-5 pb-3 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl grad-btn flex items-center justify-center shadow-glow"><i class="fa-solid fa-graduation-cap"></i></div>
+        <div class="min-w-0"><p class="font-black leading-none">CampusConnect</p><p id="collegeLabel" class="text-xs text-slate-400 truncate mt-1">@college.edu server</p></div>
+        <button id="sidebarClose" class="lg:hidden ml-auto text-slate-400 p-2"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <nav class="px-3 mt-2 space-y-1 overflow-y-auto flex-1 pb-4">
+        <p class="px-2 pt-2 pb-1 text-[11px] font-black tracking-widest text-slate-400">CAMPUS</p>
+        <button class="nav-btn" data-view="home"><i class="fa-solid fa-house w-5"></i>Home / Feed</button>
+        <button class="nav-btn" data-view="chat"><i class="fa-solid fa-comments w-5"></i>Chat Rooms<span id="chatBadge" class="ml-auto hidden text-[11px] bg-rose-500 text-white px-2 py-0.5 rounded-full font-bold">new</span></button>
+        <button class="nav-btn" data-view="teammates"><i class="fa-solid fa-users w-5"></i>Teammate Finder</button>
+        <button class="nav-btn" data-view="resources"><i class="fa-solid fa-folder-open w-5"></i>Resource Hub</button>
+        <button class="nav-btn" data-view="roadmaps"><i class="fa-solid fa-map w-5"></i>Roadmaps</button>
+        <p class="px-2 pt-4 pb-1 text-[11px] font-black tracking-widest text-slate-400">PERSONAL</p>
+        <button class="nav-btn" data-view="messages"><i class="fa-solid fa-message w-5"></i>Messages<span id="dmBadge" class="ml-auto hidden text-[11px] bg-rose-500 text-white px-2 py-0.5 rounded-full font-bold">0</span></button>
+        <button class="nav-btn" data-view="productivity"><i class="fa-solid fa-calendar-check w-5"></i>Planner &amp; To-Do</button>
+        <button class="nav-btn" data-view="profile"><i class="fa-solid fa-id-card w-5"></i>My Profile</button>
+        <div id="adminNavWrap" class="hidden">
+          <p class="px-2 pt-4 pb-1 text-[11px] font-black tracking-widest text-amber-500">STAFF</p>
+          <button class="nav-btn" data-view="admin"><i class="fa-solid fa-shield-halved w-5"></i>Admin Portal<span id="adminBadge" class="ml-auto hidden text-[11px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold">0</span></button>
+        </div>
+        <div class="pt-5 px-1"><div class="rounded-2xl p-4 text-white relative overflow-hidden" style="background:linear-gradient(135deg,#4f46e5,#9333ea)">
+          <p class="font-black text-sm">Hack season is on 🚀</p><p class="text-white/80 text-xs mt-1 leading-relaxed">Post your idea and complete your dream team today.</p>
+          <button id="ctaFindTeam" class="mt-3 bg-white text-indigo-700 text-xs font-black px-3 py-2 rounded-lg hover:bg-indigo-50">Find teammates</button>
+        </div></div>
+      </nav>
+      <div class="p-3 border-t border-slate-200 dark:border-white/10">
+        <div class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-white/[.06] cursor-pointer" id="sidebarUser">
+          <div class="relative"><div id="sidebarAvatar" class="avatar w-10 h-10 text-sm" style="background:#6366f1">?</div><span class="online-dot absolute -bottom-0.5 -right-0.5"></span></div>
+          <div class="min-w-0 flex-1"><p id="sidebarName" class="font-bold text-sm truncate">—</p><p id="sidebarMeta" class="text-xs text-slate-400 truncate">—</p></div>
+          <button id="logoutBtn" class="text-slate-400 hover:text-rose-500 p-2" title="Log out"><i class="fa-solid fa-right-from-bracket"></i></button>
+        </div>
+      </div>
+    </aside>
+    <div id="sidebarScrim" class="fixed inset-0 bg-black/50 z-30 hidden lg:hidden"></div>
+
+    <!-- Main -->
+    <main class="flex-1 min-w-0">
+      <header class="sticky top-0 z-20 glass border-b border-slate-200 dark:border-white/10 px-4 sm:px-7 py-3.5 flex items-center gap-3">
+        <button id="sidebarOpen" class="lg:hidden w-10 h-10 rounded-xl bg-slate-200/70 dark:bg-white/10"><i class="fa-solid fa-bars"></i></button>
+        <div class="min-w-0"><h2 id="viewTitle" class="font-black text-lg sm:text-xl truncate">Home</h2><p id="viewSubtitle" class="text-xs sm:text-[13px] text-slate-400 truncate">What's happening on campus</p></div>
+        <div class="ml-auto flex items-center gap-2">
+          <span id="liveModePill" class="chip bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-slate-300 hidden sm:inline-flex"></span>
+          <button id="themeToggle" class="w-10 h-10 rounded-xl bg-slate-200/70 dark:bg-white/10 hover:scale-105 transition" title="Toggle dark / light"><i class="fa-solid fa-circle-half-stroke"></i></button>
+          <button id="topProfileBtn" title="My profile"></button>
+        </div>
+      </header>
+
+      <div class="p-4 sm:p-7 max-w-[1200px] mx-auto w-full">
+        <!-- HOME -->
+        <section id="view-home" class="view">
+          <div class="rounded-3xl p-6 sm:p-8 text-white relative overflow-hidden shadow-card" style="background:linear-gradient(120deg,#312e81,#6d28d9 55%,#be185d)">
+            <div class="blob w-64 h-64 bg-white/30 -top-20 right-10"></div>
+            <p class="text-white/70 font-semibold text-sm" id="homeGreeting">Welcome back</p>
+            <h3 class="text-2xl sm:text-3xl font-black mt-1" id="homeName">Student</h3>
+            <p class="text-white/80 text-sm mt-2 max-w-lg leading-relaxed">Catch up on announcements, jump into chat rooms, or pick up right where you left off.</p>
+            <div class="flex flex-wrap gap-2 mt-5">
+              <button class="bg-white text-indigo-700 font-bold text-sm px-4 py-2.5 rounded-xl hover:bg-indigo-50" data-goto="chat"><i class="fa-solid fa-comments mr-1.5"></i>Open chat</button>
+              <button class="bg-white/15 hover:bg-white/25 font-bold text-sm px-4 py-2.5 rounded-xl" data-goto="teammates"><i class="fa-solid fa-users mr-1.5"></i>Find a team</button>
+              <button class="bg-white/15 hover:bg-white/25 font-bold text-sm px-4 py-2.5 rounded-xl" data-goto="productivity"><i class="fa-solid fa-list-check mr-1.5"></i>My planner</button>
+            </div>
+          </div>
+          <div id="homeStats" class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-5"></div>
+          <div class="grid lg:grid-cols-5 gap-5 mt-6 items-start">
+            <div class="lg:col-span-3">
+              <div class="flex items-center justify-between mb-3"><h4 class="font-black text-lg"><i class="fa-solid fa-bullhorn text-amber-500 mr-2"></i>Announcements</h4>
+              <button id="newAnnouncementBtn" class="hidden grad-btn text-sm font-bold px-3.5 py-2 rounded-xl"><i class="fa-solid fa-plus mr-1"></i>Broadcast</button></div>
+              <div id="announcementFeed" class="space-y-3"></div>
+            </div>
+            <div class="lg:col-span-2 space-y-6">
+              <div><h4 class="font-black text-lg mb-3"><i class="fa-solid fa-map text-brand-500 mr-2"></i>Latest approved roadmaps</h4><div id="homeRoadmaps" class="space-y-3"></div></div>
+              <div><h4 class="font-black text-lg mb-3"><i class="fa-solid fa-fire text-rose-500 mr-2"></i>Teams filling fast</h4><div id="homeTeams" class="space-y-3"></div></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- CHAT -->
+        <section id="view-chat" class="view">
+          <div class="card overflow-hidden !rounded-2xl grid md:grid-cols-[250px_1fr]" style="height:calc(100vh - 190px);min-height:520px">
+            <div class="border-r border-slate-200 dark:border-white/10 flex flex-col bg-slate-50/60 dark:bg-white/[.02]">
+              <div class="p-4 flex items-center justify-between"><p class="font-black text-sm tracking-wide">CHANNELS</p>
+              <button id="createChannelBtn" class="hidden w-8 h-8 rounded-lg grad-btn text-sm" title="Create channel (Admin only)"><i class="fa-solid fa-plus"></i></button></div>
+              <div id="channelList" class="px-2 pb-3 space-y-1 overflow-y-auto flex-1"></div>
+              <p class="p-3 text-[11px] text-slate-400 leading-relaxed border-t border-slate-200 dark:border-white/10"><i class="fa-solid fa-shield-halved mr-1"></i>Channels are created by admins. Hover any message to report it.</p>
+            </div>
+            <div class="flex flex-col min-h-0">
+              <div class="px-5 py-3.5 border-b border-slate-200 dark:border-white/10 flex items-center gap-3">
+                <span class="text-brand-500 font-black text-xl">#</span>
+                <div class="min-w-0"><p id="activeChannelName" class="font-black truncate">general</p><p id="activeChannelDesc" class="text-xs text-slate-400 truncate"></p></div>
+                <span class="ml-auto chip bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>Live</span>
+              </div>
+              <div id="messageList" class="flex-1 overflow-y-auto px-3 sm:px-5 py-4 space-y-1"></div>
+              <form id="messageForm" class="p-3 sm:p-4 border-t border-slate-200 dark:border-white/10 flex gap-2">
+                <input id="messageInput" class="field flex-1" placeholder="Message #general…" maxlength="4000" autocomplete="off"/>
+                <button class="grad-btn w-12 rounded-xl flex-none shadow-glow" title="Send"><i class="fa-solid fa-paper-plane"></i></button>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- TEAMMATES -->
+        <section id="view-teammates" class="view">
+          <div class="flex flex-wrap items-center gap-3 mb-5">
+            <div class="relative flex-1 min-w-[220px]"><i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i><input id="teamSearch" class="field !pl-10" placeholder="Search projects, hackathons, tech stacks…"/></div>
+            <select id="teamTypeFilter" class="field !w-auto"><option value="">All types</option><option>Hackathon</option><option>Project</option><option>Study Group</option><option>Competition</option><option>Other</option></select>
+            <select id="teamStackFilter" class="field !w-auto"><option value="">Any tech stack</option></select>
+            <button id="newTeamPostBtn" class="grad-btn font-bold text-sm px-4 py-2.5 rounded-xl shadow-glow"><i class="fa-solid fa-plus mr-1.5"></i>Post a requirement</button>
+          </div>
+          <div id="teamGrid" class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+        </section>
+
+        <!-- RESOURCES -->
+        <section id="view-resources" class="view">
+          <div class="flex bg-white dark:bg-white/[.06] border border-slate-200 dark:border-white/10 rounded-xl p-1 overflow-x-auto w-fit max-w-full mb-4">
+            <button class="tab-btn resource-tab active" data-restab="approved">Published resources</button>
+            <button class="tab-btn resource-tab" data-restab="mine">My uploads</button>
+          </div>
+          <div class="card p-4 mb-5 flex gap-3 items-start !border-brand-200 dark:!border-brand-500/30 !bg-brand-50 dark:!bg-brand-500/10">
+            <i class="fa-solid fa-circle-info text-brand-500 mt-0.5"></i>
+            <p class="text-sm leading-relaxed text-slate-600 dark:text-slate-300">Uploads go through <b>admin review</b> — new files stay <b>Pending</b> under <b>My uploads</b> (visible only to you) until an admin approves and publishes them to the hub.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-3 mb-5">
+            <div class="relative flex-1 min-w-[220px]"><i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i><input id="resourceSearch" class="field !pl-10" placeholder="Search notes, subjects, uploaders…"/></div>
+            <select id="resourceCategory" class="field !w-auto"><option value="">All categories</option><option>Notes</option><option>Cheat Sheet</option><option>Previous Papers</option><option>Books</option><option>Slides</option><option>Assignments</option><option>Other</option></select>
+            <select id="resourceSort" class="field !w-auto"><option value="new">Newest first</option><option value="upvotes">Most upvoted</option><option value="downloads">Most downloaded</option></select>
+            <button id="uploadResourceBtn" class="grad-btn font-bold text-sm px-4 py-2.5 rounded-xl shadow-glow"><i class="fa-solid fa-cloud-arrow-up mr-1.5"></i>Upload resource</button>
+          </div>
+          <div id="resourceGrid" class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+        </section>
+
+        <!-- ROADMAPS -->
+        <section id="view-roadmaps" class="view">
+          <div class="flex flex-wrap items-center gap-3 mb-5">
+            <div class="flex bg-white dark:bg-white/[.06] border border-slate-200 dark:border-white/10 rounded-xl p-1 overflow-x-auto">
+              <button class="tab-btn roadmap-tab active" data-rtab="approved">Approved roadmaps</button>
+              <button class="tab-btn roadmap-tab" data-rtab="mine">My submissions</button>
+            </div>
+            <div class="relative flex-1 min-w-[200px]"><i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i><input id="roadmapSearch" class="field !pl-10" placeholder="Search roadmaps…"/></div>
+            <button id="newRoadmapBtn" class="grad-btn font-bold text-sm px-4 py-2.5 rounded-xl shadow-glow"><i class="fa-solid fa-route mr-1.5"></i>Submit roadmap</button>
+          </div>
+          <div class="card p-4 mb-5 flex gap-3 items-start !border-brand-200 dark:!border-brand-500/30 !bg-brand-50 dark:!bg-brand-500/10">
+            <i class="fa-solid fa-circle-info text-brand-500 mt-0.5"></i>
+            <p class="text-sm leading-relaxed text-slate-600 dark:text-slate-300">Every roadmap goes through <b>admin review</b>. New submissions stay <b>Pending</b> (visible only to you) until an admin approves them — only approved roadmaps appear in the public feed.</p>
+          </div>
+          <div id="roadmapGrid" class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+        </section>
+
+        <!-- PRODUCTIVITY -->
+        <section id="view-productivity" class="view">
+          <div class="grid xl:grid-cols-5 gap-5 items-start">
+            <div class="xl:col-span-3 card p-5">
+              <div class="flex items-center justify-between mb-4">
+                <h4 class="font-black text-lg"><i class="fa-regular fa-calendar text-brand-500 mr-2"></i><span id="calTitle">Calendar</span></h4>
+                <div class="flex gap-1.5">
+                  <button id="calPrev" class="w-9 h-9 rounded-lg bg-slate-100 dark:bg-white/10 hover:scale-105 transition"><i class="fa-solid fa-chevron-left text-sm"></i></button>
+                  <button id="calToday" class="px-3 h-9 rounded-lg bg-slate-100 dark:bg-white/10 font-bold text-sm">Today</button>
+                  <button id="calNext" class="w-9 h-9 rounded-lg bg-slate-100 dark:bg-white/10 hover:scale-105 transition"><i class="fa-solid fa-chevron-right text-sm"></i></button>
+                </div>
+              </div>
+              <div class="grid grid-cols-7 gap-1.5 text-center text-[11px] font-black tracking-wide text-slate-400 mb-1.5"><span>SUN</span><span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span></div>
+              <div id="calendarGrid" class="grid grid-cols-7 gap-1.5"></div>
+              <p class="text-xs text-slate-400 mt-3"><i class="fa-solid fa-hand-pointer mr-1"></i>Click any day to add a personal event. <span class="chip bg-amber-100 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 ml-1">amber = college event</span> <span class="chip bg-brand-100 dark:bg-brand-500/15 text-brand-600 dark:text-brand-300">indigo = yours</span></p>
+              <div id="upcomingList" class="mt-5"></div>
+            </div>
+            <div class="xl:col-span-2 card p-5">
+              <div class="flex items-center justify-between mb-1"><h4 class="font-black text-lg"><i class="fa-solid fa-list-check text-emerald-500 mr-2"></i>To-Do List</h4><span id="todoProgress" class="chip bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"></span></div>
+              <div class="h-2 rounded-full bg-slate-100 dark:bg-white/10 overflow-hidden mb-4"><div id="todoBar" class="h-full rounded-full transition-all" style="width:0%;background:linear-gradient(90deg,#10b981,#6366f1)"></div></div>
+              <form id="todoForm" class="space-y-2">
+                <input id="todoInput" class="field" placeholder="Add a task… e.g. Finish DBMS assignment" required/>
+                <div class="flex gap-2"><input id="todoDue" type="date" class="field flex-1"/><select id="todoPriority" class="field !w-auto"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option></select>
+                <button class="grad-btn px-4 rounded-xl font-bold text-sm flex-none">Add</button></div>
+              </form>
+              <div class="flex gap-1.5 mt-4">
+                <button class="tab-btn todo-filter active !py-1.5 !px-3 !text-[13px]" data-tfilter="all">All</button>
+                <button class="tab-btn todo-filter !py-1.5 !px-3 !text-[13px]" data-tfilter="active">Active</button>
+                <button class="tab-btn todo-filter !py-1.5 !px-3 !text-[13px]" data-tfilter="done">Done</button>
+              </div>
+              <div id="todoList" class="mt-3 space-y-2"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- MESSAGES (1-to-1 DMs) -->
+        <section id="view-messages" class="view">
+          <div id="dmLayout" class="card overflow-hidden !rounded-2xl grid md:grid-cols-[320px_1fr]" style="height:calc(100vh - 190px);min-height:540px">
+            <!-- Conversation list -->
+            <div id="dmListPane" class="border-r border-slate-200 dark:border-white/10 flex flex-col bg-slate-50/60 dark:bg-white/[.02] min-h-0">
+              <div class="p-4 pb-3 flex items-center justify-between gap-2">
+                <p class="font-black text-sm tracking-wide">CONVERSATIONS</p>
+                <button id="newMessageBtn" class="grad-btn text-[13px] font-bold px-3 py-2 rounded-xl shadow-glow"><i class="fa-solid fa-pen-to-square mr-1"></i>New message</button>
+              </div>
+              <div class="px-3 pb-3"><div class="relative"><i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i><input id="dmSearch" class="field !pl-10 !py-2.5" placeholder="Search people…"/></div></div>
+              <div id="dmConversationList" class="px-2 pb-3 space-y-1 overflow-y-auto flex-1"></div>
+              <p class="p-3 text-[11px] text-slate-400 leading-relaxed border-t border-slate-200 dark:border-white/10"><i class="fa-solid fa-lightbulb mr-1 text-amber-500"></i>Tip: hit <b>Contact</b> on any Teammate Finder post to start a chat instantly.</p>
+            </div>
+            <!-- Active 1-to-1 chat -->
+            <div id="dmChatPane" class="flex flex-col min-h-0">
+              <div id="dmChatHeader" class="hidden px-4 sm:px-5 py-3 border-b border-slate-200 dark:border-white/10 items-center gap-3"></div>
+              <div id="dmEmptyState" class="flex-1 flex flex-col items-center justify-center text-center p-8">
+                <div class="w-16 h-16 rounded-3xl bg-brand-50 dark:bg-brand-500/10 text-brand-500 flex items-center justify-center text-3xl"><i class="fa-solid fa-message"></i></div>
+                <p class="font-black text-lg mt-4">Your messages</p>
+                <p class="text-sm text-slate-400 mt-1.5 leading-relaxed max-w-xs">Pick a conversation on the left, or start a new one. Chats you begin from Teammate Finder land here too.</p>
+                <button id="dmEmptyNewBtn" class="grad-btn font-bold text-sm px-4 py-2.5 rounded-xl shadow-glow mt-5"><i class="fa-solid fa-pen-to-square mr-1.5"></i>Start a conversation</button>
+              </div>
+              <div id="dmMessageList" class="hidden flex-1 overflow-y-auto px-4 sm:px-5 py-4 space-y-2.5"></div>
+              <form id="dmMessageForm" class="hidden p-3 sm:p-4 border-t border-slate-200 dark:border-white/10 gap-2">
+                <input id="dmMessageInput" class="field flex-1" placeholder="Type a message…" maxlength="4000" autocomplete="off"/>
+                <button class="grad-btn w-12 rounded-xl flex-none shadow-glow" title="Send"><i class="fa-solid fa-paper-plane"></i></button>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- PROFILE -->
+        <section id="view-profile" class="view"><div id="profileWrap"></div></section>
+
+        <!-- ADMIN -->
+        <section id="view-admin" class="view">
+          <div id="adminStats" class="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mb-5"></div>
+          <div class="flex bg-white dark:bg-white/[.06] border border-slate-200 dark:border-white/10 rounded-xl p-1 overflow-x-auto w-fit max-w-full mb-5">
+            <button class="tab-btn admin-tab active" data-atab="roadmaps">Roadmap queue <span id="atabRoadmapCount" class="ml-1"></span></button>
+            <button class="tab-btn admin-tab" data-atab="reports">Reports <span id="atabReportCount" class="ml-1"></span></button>
+            <button class="tab-btn admin-tab" data-atab="resources">Resource reviews <span id="atabResourceCount" class="ml-1"></span></button>
+            <button class="tab-btn admin-tab" data-atab="users">Users &amp; roles</button>
+            <button class="tab-btn admin-tab" data-atab="channels">Channels</button>
+            <button class="tab-btn admin-tab" data-atab="announcements">Announcements</button>
+          </div>
+          <div id="adminPanel"></div>
+        </section>
+      </div>
+      <footer class="px-7 pb-8 text-center text-xs text-slate-400">CampusConnect · Student Interaction Portal · Built with Supabase (Auth · Postgres · Realtime · Storage)</footer>
+    </main>
+  </div>
+</section>
+
+<!-- Modal + Toast roots -->
+<div id="modalRoot"></div>
+<div id="toastRoot" class="fixed bottom-5 right-5 z-[90] space-y-2 w-[min(92vw,360px)]"></div>
+
+<script src="app.js?v=7"></script>
+</body>
+</html>
